@@ -1,0 +1,36 @@
+---
+- hosts: all
+  gather_facts: True
+  user: ubuntu
+  sudo: True
+  tasks:
+
+    # fetch instance data from the metadata servers in ec2
+    - ec2_facts:
+
+    # just show the instance-id
+    - debug: msg= "{{ hostvars[inventory_hostname]['ansible_ec2_instance_id'] }}"
+
+- hosts: all
+  gather_facts: True
+  connection: local
+  vars:
+    region: "{{ vpc_region }}"
+  vars_files:
+    - aws/vars/tags.yml	
+    - aws/vars/vpc.yml
+    - aws/vars/ec2_key.yml
+    - aws/vars/rds.yml
+    - aws/vars/webserver.yml
+    - aws/vars/elb.yml
+    - aws/vars/route53.yml    
+  tasks:
+    - name: destroy all instances
+      ec2: state='absent'
+           region={{ region }}
+           instance_ids={{ item }}
+           wait=true
+      with_items: hostvars[inventory_hostname]['ansible_ec2_instance_id']
+
+
+

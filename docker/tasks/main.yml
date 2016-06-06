@@ -1,0 +1,52 @@
+---
+ - name: Installing pre requirments
+   apt: name={{ item }} state=latest update_cache=yes
+   with_items:
+     - apt-transport-https 
+     - ca-certificates
+ - name: Adding gpg key for repo
+   shell: apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+
+ - name: Docker add repo in sources.list.d
+   shell: echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' > /etc/apt/sources.list.d/docker.list
+
+ - name: Installing docker
+   apt: name=docker-engine state=latest update_cache=yes
+    
+ - name: Add docker service to autoload
+   service: name=docker enabled=yes
+    
+ - name: Start docker service
+   service: name=docker state=started
+
+ - name: Install python
+   apt: name=python state=present
+   
+ - name: Install python-pip
+   apt: name=python-pip state=present
+   
+ - name: Install docker-py
+   shell: pip install -U --user pip && pip install --user docker-py && ~/.local/bin/pip
+   
+
+    
+ - name: starting webserver
+   docker:
+     image: "wordpress"
+     name: "wordpress"
+     state: reloaded
+     restart_policy: always
+#     hostname: "{{ inventory_hostname }}"
+     ports:
+       - "80:80"
+     env:
+       WORDPRESS_DB_HOST: "{{ db_hostname }}:3306"
+       WORDPRESS_DB_USER: "{{ db_username }}"
+       WORDPRESS_DB_PASSWORD: "{{ db_password }}"
+       WORDPRESS_DB_NAME: "{{ db_name }}"
+#     volumes:
+#        - "/:/rootfs:ro"
+#        - "/var/run:/var/run:rw"
+#        - "/sys:/sys:ro"
+#        - "/var/lib/docker/:/var/lib/docker:ro"
+#        - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
